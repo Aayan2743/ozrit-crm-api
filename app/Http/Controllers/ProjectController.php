@@ -4,10 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\project;
+use App\Models\project_document;
 use Validator;
 use Carbon\Carbon;
 use Illuminate\Validation\Rule;
-
+use Illuminate\Support\Facades\Storage;
 class ProjectController extends Controller
 {
     //
@@ -268,6 +269,120 @@ class ProjectController extends Controller
         ]);
     }
 
+
+    public function updateDocument(Request $request){
+        
+
+
+        $project = Project::findOrFail($request->id);
+
+  
+    $data = [];
+
+    // 3) Handle the file upload if present
+    if ($request->hasFile('file') && $request->file('file')->isValid()) {
+
+        // dd("fgjdfklgjdflkg");
+        $file     = $request->file('file');
+        $filename = time() . '_' . $file->getClientOriginalName();
+        
+        // store in storage/app/public/documents
+        $path = $file->storeAs('public/documents', $filename);
+
+        // optionally, save to DB:
+        // $project->document_path = $path;
+        // $project->save();
+
+        $data['file_name']   = $path;
+        // $data['original_name']   = $file->getClientOriginalName();
+        // $data['mime_type']       = $file->getClientMimeType();
+        $data['file_size']            = $file->getSize();
+    }
+
+    // 4) Capture other fields
+    if ($request->filled('sentOn')) {
+        $data['sentOn'] = $request->input('sentOn');
+        // e.g. $project->sent_on = $data['sentOn'];
+    }
+    if ($request->filled('notes')) {
+        $data['notes'] = $request->input('notes');
+        // e.g. $project->notes = $data['notes'];
+    }
+
+    // 5) Optionally apply these to your project and save
+    // $project->update($data);
+
+    // 6) Return a JSON response
+    return response()->json([
+        'status'  => true,
+        'message' => 'Project document updated',
+        'data'    => $data,
+    ]);      
+
+
+    }
+
+        public function add_documents(Request $request){
+            
+
+
+              $validator = Validator::make($request->all(), [
+                    'file' => 'nullable|file|max:10240',      // max 10MB
+                    'sentOn'   => 'required|date',
+                    'notes'    => 'nullable|string',
+                    'forpurpose'    => 'required|string',   
+                    'doc_type'    => 'required|string',   
+                    // 'status'   => 'required|in:Pending,Sent,Received'
+
+       
+                 ]);
+
+                        if ($validator->fails()) {
+                            return response()->json([
+                                'status'  => false,
+                                'error'   => 'Validation Error',
+                                'message' => $validator->errors()->first()
+                            ]);
+                        }
+
+   
+    $doc = new project_document();
+    $doc->project_id   = $request->id;
+    $doc->doc_type     = $request->doc_type;
+    $doc->status       ='sent';
+    $doc->sent_on      = Carbon::parse($request->input('sentOn'))->toDateString();
+    // received_on stays null until client marks received
+    $doc->notes        = $request->input('notes');
+
+    // 4) Handle the file upload, if present
+    if ($request->hasFile('file') && $request->file('file')->isValid()) {
+        $file     = $request->file('file');
+        $filename = time() . '_' . $file->getClientOriginalName();
+
+        // store in storage/app/public/documents
+        $path = $file->storeAs('public/documents', $filename);
+
+        $url = Storage::url('documents/' . $filename);
+
+        $doc->file_name = $url;             // or $path if you prefer full path
+        $doc->doc_name = $request->forpurpose;             // or $path if you prefer full path
+        $doc->file_size = $file->getSize();      // in bytes
+    }
+
+    // 5) Persist to the database
+    $doc->save();
+
+    // 6) Return JSON response
+    return response()->json([
+        'status'  => true,
+        'message' => 'Document saved successfully',
+        'data'    => $doc,                      // the newly created document
+    ]);
+            
+
+
+
+    }
 
 
 

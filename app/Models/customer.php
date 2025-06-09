@@ -11,4 +11,10 @@ class customer extends Model
 
     public $guarded=[];
 
+
+     public function projects()
+    {
+        return $this->hasMany(Project::class, 'customerId');
+    }
+
 }

@@ -74,8 +74,13 @@ Route::group(['middleware'=>'api'],function($routes){
     Route::post('add-project',[ProjectController::class,'store']);
     Route::get('list-project/{id?}',[ProjectController::class,'list']);
     Route::put('/projects-stage-update/{id}',      [ProjectController::class, 'update']);
-
+    Route::post('/project-document',      [ProjectController::class, 'add_documents']);
     
+
+
+
+    //below no need
+
     Route::put('/projects-domain-update/{id}',      [ProjectController::class, 'updateDomain']);
 
     Route::put('/projects-hosting-update/{id}',      [ProjectController::class, 'updateHosting']);

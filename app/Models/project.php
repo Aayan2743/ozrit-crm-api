@@ -35,6 +35,9 @@ class project extends Model
     {
         // The default foreign key is "project_id", and local primary key is "id"
         return $this->hasMany(project_document::class);
+
+          
+        
     }
 
     
