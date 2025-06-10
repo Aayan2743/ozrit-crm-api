@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\project;
 use App\Models\project_document;
+use App\Models\activitie;
 use Validator;
 use Carbon\Carbon;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 class ProjectController extends Controller
 {
     //
@@ -166,7 +168,7 @@ class ProjectController extends Controller
 
              if ($id !== null) {
                         // $customer = Customer::where('deleted_at','!=',null)->find($id);
-                        $projects = project::with(['customer','documents'])->where('deleted_at','=',null)->where('saas_id',$saas_id)->find($id);
+                        $projects = project::with(['customer','documents','activities'])->where('deleted_at','=',null)->where('saas_id',$saas_id)->find($id);
                         
                         if (!$projects) {
                             return response()->json([
@@ -181,7 +183,16 @@ class ProjectController extends Controller
               }
 
         // Fetching all customers (Consider using pagination or selecting necessary fields if large dataset)
-        $allprojects = project::with(['customer','documents'])->where('deleted_at','=',null)->where('saas_id',$saas_id)->get();
+        $allprojects = project::with(['customer','documents',
+        
+        
+          'activities' => function ($query) {
+                 $query->orderBy('created_at', 'desc'); // ascending order for activities
+              }
+        
+        
+        
+        ])->where('deleted_at','=',null)->where('saas_id',$saas_id)->orderBy('created_at', 'desc')->get();
 
         // Returning the response with data
         return response()->json([
@@ -228,7 +239,7 @@ class ProjectController extends Controller
         $stageKey = reset($sentKeys);
         $value = $request->input($stageKey);
 
-        // 3) Validate based on which key it is
+       
         $rules = [];
         switch ($stageKey) {
             case 'domain':
@@ -258,9 +269,25 @@ class ProjectController extends Controller
         // Run validation; if it fails, Laravel will return a 422 with errors
         $validated = $request->validate($rules);
 
+
+
         // 4) Assign and save only that one field
         $project->$stageKey = $validated[$stageKey];
         $project->save();
+
+
+        // activities
+
+            $create_activities=activitie::create([
+                'project_id'=>$id,
+                'stage'=>$stageKey,
+                'details'=>$value,
+                'updated_by'=>auth()->user()->name
+            ]);
+
+          
+
+
 
         // 5) Return the updated project
         return response()->json([
@@ -289,14 +316,14 @@ class ProjectController extends Controller
         // store in storage/app/public/documents
         $path = $file->storeAs('public/documents', $filename);
 
-        // optionally, save to DB:
-        // $project->document_path = $path;
-        // $project->save();
 
         $data['file_name']   = $path;
-        // $data['original_name']   = $file->getClientOriginalName();
-        // $data['mime_type']       = $file->getClientMimeType();
+     
         $data['file_size']            = $file->getSize();
+
+      
+
+
     }
 
     // 4) Capture other fields
@@ -309,10 +336,10 @@ class ProjectController extends Controller
         // e.g. $project->notes = $data['notes'];
     }
 
-    // 5) Optionally apply these to your project and save
-    // $project->update($data);
 
-    // 6) Return a JSON response
+
+
+
     return response()->json([
         'status'  => true,
         'message' => 'Project document updated',
@@ -322,7 +349,7 @@ class ProjectController extends Controller
 
     }
 
-        public function add_documents(Request $request){
+    public function add_documents(Request $request){
             
 
 
@@ -372,6 +399,14 @@ class ProjectController extends Controller
     // 5) Persist to the database
     $doc->save();
 
+
+       $create_activities=activitie::create([
+                'project_id'=>$request->id,
+                'stage'=>$request->doc_type,
+                'details'=>$request->forpurpose,
+                'updated_by'=>auth()->user()->name
+            ]);
+
     // 6) Return JSON response
     return response()->json([
         'status'  => true,
@@ -384,6 +419,83 @@ class ProjectController extends Controller
 
     }
 
+    public function delete_documents(Request $request,$id){
+
+        //   $filepath=project_document::delete($id);
+
+          $project_document = project_document::find($id);
+
+            if ($project_document) {
+                $project_document->delete();  // Delete the customer
+
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Project Document deleted successfully'
+                ]);
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Project Document Not deleted successfully'
+                ], 201);
+            }   
+
+         
+
+
+          
+
+
+    }
+
+
+    public function download_documents(Request $request, $id){
+
+            $filepath=project_document::find($id);
+            return response()->json([
+                'status'=>"dfhgdf",
+                'ddd'=>$filepath->file_name
+            ]);
+
+
+        //  $validator = Validator::make($request->all(), [
+        // 'filename'          => 'required|string',
+       
+        //      ]);
+
+        //             if ($validator->fails()) {
+        //                 return response()->json([
+        //                     'status'  => false,
+        //                     'error'   => 'Validation Error',
+        //                     'message' => $validator->errors()->first()
+        //                 ]);
+        //             }
+
+        //               $filePath = env('APP_URL') . $filename;
+
+        // // Check if file exists
+        // if (!Storage::exists($filePath)) {
+        //     return response()->json([
+        //         'error' => 'File not found'
+        //     ], 404);
+        // }
+
+        // // Get the file's mime type
+        // $mimeType = Storage::mimeType($filePath);
+
+        // // Create response headers
+        // $headers = [
+        //     'Content-Type' => $mimeType,
+        //     'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        // ];
+
+        // // Return streamed response for file download
+        // return new StreamedResponse(function () use ($filePath) {
+        //     // Read and output the file in chunks
+        //     $stream = Storage::readStream($filePath);
+        //     fpassthru($stream);
+        //     fclose($stream);
+        // }, 200, $headers);
+    }
 
 
 

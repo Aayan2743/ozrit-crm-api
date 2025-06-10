@@ -40,5 +40,16 @@ class project extends Model
         
     }
 
+
+    public function activities()
+    {
+        
+          return $this->hasMany(activitie::class)->orderBy('created_at', 'desc');
+        //   return $this->hasMany(activitie::class)->orderBy('created_at', 'desc')->paginate(10);
+
+          
+        
+    }
+
     
 }

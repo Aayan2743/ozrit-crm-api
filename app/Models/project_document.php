@@ -24,14 +24,10 @@ class project_document extends Model
 
     public function getUrlAttribute()
     {
-        // If you store just the filename in `path`:
-        // return url('storage/' . $this->file_name);
-
-            //  return Storage::disk('public')->url($this->file_name);
+      
 
               return env('APP_URL') . $this->file_name;
         
-        // Or, if you store the full "public" disk path:
-        // return Storage::disk('public')->url($this->path);
+       
     }
 }

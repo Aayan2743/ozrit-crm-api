@@ -7,6 +7,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\staffController;
 
 /*
 |--------------------------------------------------------------------------
@@ -58,7 +59,7 @@ Route::group(['middleware'=>'api'],function($routes){
  
 
 });
-
+    Route::get('/download-document/{id}',      [ProjectController::class, 'download_documents']);
 
 // Route::group(['middleware'=>['jwt.verify', 'checkPos']],function($routes){
  Route::group(['middleware'=>['jwt.verify'],  'prefix' => 'admin'],function($routes){
@@ -75,8 +76,11 @@ Route::group(['middleware'=>'api'],function($routes){
     Route::get('list-project/{id?}',[ProjectController::class,'list']);
     Route::put('/projects-stage-update/{id}',      [ProjectController::class, 'update']);
     Route::post('/project-document',      [ProjectController::class, 'add_documents']);
+    Route::delete('project-document-delete/{id}',      [ProjectController::class, 'delete_documents']);
+    // Route::get('/download-document/{filename}',      [ProjectController::class, 'download_documents']);
     
-
+    //staff module
+    Route::get('list-staff/{id?}',[staffController::class,'list']);
 
 
     //below no need
