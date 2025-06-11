@@ -16,6 +16,178 @@ class ProjectController extends Controller
     //
 
  
+public function updateproject(Request $request,$id){
+
+
+ return response()->json([
+    'sss'=>$customerId
+
+ ]);
+
+
+ $saas_id = auth()->user()->saas_id;
+
+    // 1) Validation rules, including “array” and “*.mimes” for file uploads
+    $validator = Validator::make($request->all(), [
+        'customerId'          => 'required|integer|exists:customers,id',
+        'projectTitle'        => 'required|string|max:255',
+        'services'            => 'required|array',
+        'services.*'          => 'string|max:100', // adjust max length as needed
+
+        'totalPrice'          => 'required|numeric',
+        'orderSource'         => 'required|string|max:100',
+        'salesAgent'          => 'required|string|max:100',
+
+        'domainName'          => 'required|string|max:255',
+        'domainOwnership'     => 'required|string|max:50',
+        'hostingType'         => 'required|string|max:50',
+        'hasLogo'             => 'required|string|in:yes,no',
+        'logoType'            => 'nullable|string|in:free,paid',
+        'logoCost'            => 'nullable|numeric',
+
+        'contactDetails'      => 'required|string|max:500',
+        'deadline'            => 'required|date',
+        'assignedTo'          => 'required|array',
+        'assignedTo.*'        => 'string|max:100',
+
+        // Attachments: zero or more PDF files
+        'attachmentsx'         => 'nullable|array',
+        'attachmentsx.*'       => 'file|mimes:pdf|max:20480', // max 20 MB each (adjust as needed)
+
+        'notes'               => 'required|string|max:1000',
+        'advancePaid'         => 'required|numeric',
+        'balanceRemaining'    => 'required|numeric',
+        'paymentMode'         => 'required|string|in:bank,upi',
+
+        // Payment screenshots: zero or more images (jpg/png)
+        'paymentScreenshots'  => 'nullable|array',
+        // 'paymentScreenshots.*'=> 'image|mimes:jpeg,jpg,png|max:5120', // max 5 MB each
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'status'  => false,
+            'error'   => 'Validation Error',
+            'message' => $validator->errors()->first()
+        ]);
+    }
+
+    try {
+        // 2) Handle file uploads
+        $savedAttachmentPaths = [];
+      
+        if ($request->hasFile('attachmentsx')) {
+         
+                    foreach ($request->file('attachmentsx') as $pdf) {
+                        $path = $pdf->store('project_attachments', 'public');
+                        $savedAttachmentPaths[] = $path;
+                    }
+                }
+
+        $savedScreenshotPaths = [];
+        if ($request->hasFile('paymentScreenshots')) {
+            /** @var \Illuminate\Http\UploadedFile $img */
+            foreach ($request->file('paymentScreenshots') as $img) {
+                // This will store under storage/app/public/payment_screenshots/{filename}
+                $path = $img->store('payment_screenshots', 'public');
+                $savedScreenshotPaths[] = $path;
+            }
+        }
+
+        // 3) Create the project record
+        // $newProject = project::create([
+        //     'customerId'         => $request->customerId,
+        //     'projectTitle'       => $request->projectTitle,
+        //     // “services” was validated as an array of strings, so we can JSON‐encode it:
+        //     'services'           => json_encode($request->services),
+
+        //     'totalPrice'         => $request->totalPrice,
+        //     'orderSource'        => $request->orderSource,
+        //     'salesAgent'         => json_encode($request->salesAgent), 
+            
+        //     'domainName'         => $request->domainName,
+        //     'domainOwnership'    => $request->domainOwnership,
+        //     'hostingType'        => $request->hostingType,
+        //     'hasLogo'            => $request->hasLogo,
+        //     'logoType'           => $request->logoType,
+        //     'logoCost'           => $request->logoCost,
+
+        //     'contactDetails'     => $request->contactDetails,
+        //     'deadline'           => $request->deadline,
+        //     'assignedTo'         => json_encode($request->assignedTo),
+
+        //     // Store the array of saved PDF paths as JSON
+        //     'attachments'        => json_encode($savedAttachmentPaths),
+
+        //     'notes'              => $request->notes,
+        //     'advancePaid'        => $request->advancePaid,
+        //     'balanceRemaining'   => $request->balanceRemaining,
+        //     'paymentMode'        => $request->paymentMode,
+
+        //     // Store the array of saved screenshot paths as JSON
+        //     'paymentScreenshot'  => json_encode($savedScreenshotPaths),
+
+        //     'saas_id'            => $saas_id,
+        // ]);
+
+        $updateProject=where('id',$id)->update([
+            'customerId'         => $request->customerId,
+            'projectTitle'       => $request->projectTitle,
+            // “services” was validated as an array of strings, so we can JSON‐encode it:
+            'services'           => json_encode($request->services),
+
+            'totalPrice'         => $request->totalPrice,
+            'orderSource'        => $request->orderSource,
+            'salesAgent'         => json_encode($request->salesAgent), 
+            
+            'domainName'         => $request->domainName,
+            'domainOwnership'    => $request->domainOwnership,
+            'hostingType'        => $request->hostingType,
+            'hasLogo'            => $request->hasLogo,
+            'logoType'           => $request->logoType,
+            'logoCost'           => $request->logoCost,
+
+            'contactDetails'     => $request->contactDetails,
+            'deadline'           => $request->deadline,
+            'assignedTo'         => json_encode($request->assignedTo),
+
+            // Store the array of saved PDF paths as JSON
+            'attachments'        => json_encode($savedAttachmentPaths),
+
+            'notes'              => $request->notes,
+            'advancePaid'        => $request->advancePaid,
+            'balanceRemaining'   => $request->balanceRemaining,
+            'paymentMode'        => $request->paymentMode,
+
+            // Store the array of saved screenshot paths as JSON
+            'paymentScreenshot'  => json_encode($savedScreenshotPaths),
+
+            'saas_id'            => $saas_id,
+        ]);    
+
+        if ($updateProject) {
+            return response()->json([
+                'status'  => true,
+                'message' => 'Project updated Successfully!',
+            ]);
+        }
+
+        return response()->json([
+            'status'  => false,
+            'message' => 'Project Not updated',
+        ], 500);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status'  => false,
+            'error'   => 'Exception Error',
+            'message' => $e->getMessage()
+        ], 500);
+    }
+}
+
+
+
     public function store(Request $request)
 {
 

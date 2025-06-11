@@ -73,6 +73,7 @@ Route::group(['middleware'=>'api'],function($routes){
 
     // Project Module
     Route::post('add-project',[ProjectController::class,'store']);
+    Route::put('update-project/{id}',[ProjectController::class,'updateproject']);
     Route::get('list-project/{id?}',[ProjectController::class,'list']);
     Route::put('/projects-stage-update/{id}',      [ProjectController::class, 'update']);
     Route::post('/project-document',      [ProjectController::class, 'add_documents']);

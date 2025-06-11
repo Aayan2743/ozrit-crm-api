@@ -23,12 +23,12 @@ use App\Services\FirebaseService;
 class CustomApiAuthController extends Controller
 {
 
-    protected $firebase;
+    // protected $firebase;
 
-    public function __construct(FirebaseService $firebase)
-    {
-        $this->firebase = $firebase;
-    }
+    // public function __construct(FirebaseService $firebase)
+    // {
+    //     $this->firebase = $firebase;
+    // }
 
 
     //login with OTP  for mobile
